@@ -8,7 +8,7 @@ TEST(FrameConstructor, LispTests)
   auto frame = std::make_shared<Frame>(symbols, nullptr, true);
   Number n;
   n = start;
-  Frame::Value v{n};
+  Value v{n};
   frame->define("A", v);
   Frame child(symbols, frame);
   bool found{false};

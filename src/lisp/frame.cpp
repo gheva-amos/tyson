@@ -25,13 +25,13 @@ bool Frame::set(AtomTable::Atom id, Value val)
   return true;
 }
 
-const Frame::Value& Frame::lookup(const std::string& name, bool& ret) const
+Value Frame::lookup(const std::string& name, bool& ret) const
 {
   AtomTable::Atom id{symbols_.intern(name)};
   return lookup(id, ret);
 }
 
-const Frame::Value& Frame::lookup(AtomTable::Atom id, bool& ret) const
+Value Frame::lookup(AtomTable::Atom id, bool& ret) const
 {
   auto at = bindings_.find(id);
   if (at == bindings_.end())
@@ -47,3 +47,11 @@ const Frame::Value& Frame::lookup(AtomTable::Atom id, bool& ret) const
   return bindings_.at(id);
 }
 
+std::shared_ptr<Frame> Frame::parent()
+{
+  if (is_global_)
+  {
+    return nullptr;
+  }
+  return parent_;
+}
