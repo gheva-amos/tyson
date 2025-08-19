@@ -23,6 +23,7 @@ public:
     list,
     start,
     quote,
+    if_t,
     unknown
   };
   AST(Token& token);
@@ -142,6 +143,20 @@ public:
   virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   std::unique_ptr<AST> value_;
+};
+
+class ASTIf : public AST
+{
+public:
+  ASTIf(Token& token);
+  virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override;
+  void add_child(std::unique_ptr<AST> child) override;
+private:
+  unsigned count_;
+  std::unique_ptr<AST> test_;
+  std::unique_ptr<AST> true_;
+  std::unique_ptr<AST> else_;
 };
 
 #endif // TYSON_AST_H__

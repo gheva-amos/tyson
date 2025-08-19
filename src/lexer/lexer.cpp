@@ -157,11 +157,20 @@ Token Lexer::get_symbol()
     }
     ss << next();
   }
-  if (ss.str() == "quote")
+  std::string compare{ss.str()};
+  if (compare == "nil")
   {
-    return {Token::Type::quote, ss.str(), l, c};
+    return {Token::Type::nil, compare, l, c};
   }
-  return {Token::Type::symbol, ss.str(), l, c};
+  if (compare == "if")
+  {
+    return {Token::Type::if_t, compare, l, c};
+  }
+  if (compare == "quote")
+  {
+    return {Token::Type::quote, compare, l, c};
+  }
+  return {Token::Type::symbol, compare, l, c};
 }
 
 bool Lexer::is_number_start() const

@@ -138,6 +138,10 @@ std::ostream& Primitive::output(std::ostream& out) const
   return out;
 }
 
+bool is_true(const Value& v)
+{
+  return std::visit([](auto const& x) -> bool { return x.is_true(); }, v);
+}
 /*
 Pair,
 Primitive,

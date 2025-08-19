@@ -38,6 +38,9 @@ std::ostream& AST::output(std::ostream& out) const
   case Type::quote:
     out << "Quote";
     break;
+  case Type::if_t:
+    out << "If";
+    break;
   case Type::unknown:
     out << "Unknown";
     break;
@@ -227,6 +230,56 @@ Value ASTQuote::eval(std::unique_ptr<Env>& env)
   return value_->quote(env);
 }
 
+ASTIf::ASTIf(Token& token) :
+  AST{token}, count_{0}
+{
+  type_ = AST::Type::if_t;
+}
+
+Value ASTIf::eval(std::unique_ptr<Env>& env)
+{
+  Value test{test_->eval(env)};
+
+  if (is_true(test))
+  {
+    return true_->eval(env);
+  }
+  return else_->eval(env);
+}
+
+Value ASTIf::quote(std::unique_ptr<Env>& env)
+{
+  List ret;
+  Value tmp = test_->quote(env);
+  ret.push_back(tmp);
+  tmp = true_->quote(env);
+  ret.push_back(tmp);
+  tmp = else_->quote(env);
+  ret.push_back(tmp);
+  return Value{ret};
+}
+
+void ASTIf::add_child(std::unique_ptr<AST> child)
+{
+  if (count_ >= 3)
+  {
+    throw std::runtime_error("too many arguments for if");
+  }
+  switch (count_)
+  {
+  case 0:
+    test_ = std::move(child);
+    break;
+  case 1:
+    true_ = std::move(child);
+    break;
+  case 2:
+    else_ = std::move(child);
+    break;
+  }
+  ++count_;
+}
+
 std::unique_ptr<AST> AST::factory(Token& token)
 {
   switch (token.type())
@@ -237,6 +290,10 @@ std::unique_ptr<AST> AST::factory(Token& token)
     return std::make_unique<ASTList>(token);
   case Token::Type::quote:
     return std::make_unique<ASTQuote>(token);
+  case Token::Type::if_t:
+    return std::make_unique<ASTIf>(token);
+  case Token::Type::nil:
+    return std::make_unique<ASTNil>(token);
   case Token::Type::close:
   case Token::Type::dot:
   case Token::Type::END:
@@ -268,6 +325,11 @@ std::unique_ptr<AST> AST::symbol_factory(Token& token)
   if (lc == "quote")
   {
     return std::make_unique<ASTQuote>(token);
+  }
+
+  if (lc == "if")
+  {
+    return std::make_unique<ASTIf>(token);
   }
 
   return std::make_unique<ASTSymbol>(token);

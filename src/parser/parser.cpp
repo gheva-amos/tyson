@@ -1,6 +1,7 @@
 #include "parser/parser.h"
 #include <utility>
 #include <vector>
+#include <iostream>
 
 Parser::Parser(std::string src) : lexer_{std::move(src)}
 {
@@ -28,6 +29,15 @@ void Parser::parse_form(std::vector<AST*>& stack)
     if (stack.size() != 1)
     {
     }
+    return;
+  }
+  if (current.type() == Token::Type::if_t)
+  {
+    std::unique_ptr<AST> quote{std::make_unique<ASTIf>(current)};
+    AST* root = stack.back();
+    stack.push_back(quote.get());
+    root->add_child(std::move(quote));
+    parse_form(stack);
     return;
   }
   if (current.type() == Token::Type::quote)

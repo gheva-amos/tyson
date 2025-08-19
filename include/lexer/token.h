@@ -16,6 +16,8 @@ public:
     number,
     string,
     symbol,
+    if_t,
+    nil,
     END
   };
   Token(Type type, const std::string& text, size_t line, size_t column,
