@@ -105,6 +105,23 @@ Value& List::operator[](size_t index)
   return values_[index];
 }
 
+Value List::car() const
+{
+  Value v{values_[0]};
+  return v;
+}
+
+Value List::cdr() const
+{
+  List ret{};
+  for (size_t i{1}; i < values_.size(); ++i)
+  {
+    Value v{values_[i]};
+    ret.push_back(v);
+  }
+  return Value{ret};
+}
+
 void Primitive::set_name(const std::string& name)
 {
   name_ = name;

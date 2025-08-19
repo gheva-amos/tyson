@@ -91,6 +91,8 @@ public:
   Value& operator[](size_t index);
   std::vector<Value>::iterator begin() { return values_.begin(); }
   std::vector<Value>::iterator end() { return values_.end(); }
+  Value car() const;
+  Value cdr() const;
 private:
   std::vector<Value> values_;
 };
