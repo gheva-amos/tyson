@@ -235,8 +235,9 @@ std::unique_ptr<AST> AST::factory(Token& token)
     return std::make_unique<ASTString>(token);
   case Token::Type::open:
     return std::make_unique<ASTList>(token);
-  case Token::Type::close:
   case Token::Type::quote:
+    return std::make_unique<ASTQuote>(token);
+  case Token::Type::close:
   case Token::Type::dot:
   case Token::Type::END:
     return nullptr;
