@@ -5,6 +5,8 @@
 #include <vector>
 #include <memory>
 #include <ostream>
+#include "lisp/env.h"
+#include "lisp/runtime_types.h"
 
 class Token;
 
@@ -31,6 +33,7 @@ public:
 //  virtual bool operator()() = 0;
   const std::string& str() const { return print_value_; }
   virtual std::ostream& output(std::ostream& out) const;
+  virtual Value eval(std::unique_ptr<Env>& env) = 0;
 protected:
   size_t line_;
   size_t column_;
@@ -46,6 +49,7 @@ public:
   ASTStart(Token& token) : AST{token} {type_ = AST::Type::start;}
   virtual void add_child(std::unique_ptr<AST> child) override;
   virtual AST* get_child() override { return root_.get(); }
+  virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   std::unique_ptr<AST> root_;
 };
@@ -56,6 +60,7 @@ public:
   ASTNumber(Token& token);
   double value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
+  virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   double value_;
 };
@@ -66,6 +71,7 @@ public:
   ASTString(Token& token);
   const std::string& value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
+  virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   std::string value_;
 };
@@ -76,6 +82,7 @@ public:
   ASTBool(Token& token);
   bool value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
+  virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   bool value_;
 };
@@ -86,6 +93,7 @@ public:
   ASTList(Token& token);
   void add_child(std::unique_ptr<AST> child) override;
   virtual std::ostream& output(std::ostream& out) const;
+  virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   std::vector<std::unique_ptr<AST>> value_;
 };
@@ -96,6 +104,7 @@ public:
   ASTSymbol(Token& token);
   const std::string& value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
+  virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   std::string value_;
 };
@@ -105,6 +114,7 @@ class ASTNil : public AST
 public:
   ASTNil(Token& token);
   const std::string& value() const;
+  virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   std::string value_;
 };

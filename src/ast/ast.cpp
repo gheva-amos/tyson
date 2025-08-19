@@ -2,6 +2,7 @@
 #include "lexer/token.h"
 #include <stdexcept>
 #include <algorithm>
+#include "lisp/runtime_types.h"
 
 AST::AST(Token& token) :
   line_{token.line()}, column_{token.column()}, type_{Type::unknown}, print_value_{token.string()}
@@ -45,6 +46,11 @@ void ASTStart::add_child(std::unique_ptr<AST> child)
   root_ = std::move(child);
 }
 
+Value ASTStart::eval(std::unique_ptr<Env>& env)
+{
+  return root_->eval(env);
+}
+
 ASTNumber::ASTNumber(Token& token) :
   AST{token}, value_{token.number()}
 {
@@ -57,6 +63,16 @@ std::ostream& ASTNumber::output(std::ostream& out) const
   return out;
 }
 
+Value ASTNumber::eval(std::unique_ptr<Env>& env)
+{
+
+  Number num;
+  num = value_;
+  Value ret;
+  ret = num;
+  return ret;
+}
+
 ASTString::ASTString(Token& token) :
   AST{token}, value_{token.string()}
 {
@@ -67,6 +83,15 @@ std::ostream& ASTString::output(std::ostream& out) const
 {
   AST::output(out) << std::endl << value();
   return out;
+}
+
+Value ASTString::eval(std::unique_ptr<Env>& env)
+{
+  String str;
+  str = value_;
+  Value ret;
+  ret = str;
+  return ret;
 }
 
 ASTBool::ASTBool(Token& token) :
@@ -85,6 +110,15 @@ std::ostream& ASTBool::output(std::ostream& out) const
 {
   AST::output(out) << std::endl << (value() ? "True" : "False");
   return out;
+}
+
+Value ASTBool::eval(std::unique_ptr<Env>& env)
+{
+  Boolean b;
+  b = value_;
+  Value ret;
+  ret = b;
+  return ret;
 }
 
 ASTList::ASTList(Token& token) :
@@ -111,10 +145,33 @@ void ASTList::add_child(std::unique_ptr<AST> child)
   value_.push_back(std::move(child));
 }
 
+Value ASTList::eval(std::unique_ptr<Env>& env)
+{
+  List l;
+  for (auto& ast : value_)
+  {
+    Value val{ast->eval(env)};
+    l.push_back(val);
+  }
+  Value ret;
+  ret = l;
+  return ret;
+}
+
 ASTSymbol::ASTSymbol(Token& token) :
   AST{token}, value_{token.string()}
 {
   type_ = AST::Type::symbol;
+}
+
+Value ASTSymbol::eval(std::unique_ptr<Env>& env)
+{
+  auto ret{env->lookup(value_)};
+  if (env->error())
+  {
+    throw std::runtime_error("Could not find symbol " + value_);
+  }
+  return ret;
 }
 
 std::ostream& ASTSymbol::output(std::ostream& out) const
@@ -132,6 +189,14 @@ ASTNil::ASTNil(Token& token) :
   if (lc != "nil")
   {
   }
+}
+
+Value ASTNil::eval(std::unique_ptr<Env>& env)
+{
+  Nil nil;
+  Value ret;
+  ret = nil;
+  return ret;
 }
 
 std::unique_ptr<AST> AST::factory(Token& token)
