@@ -41,6 +41,12 @@ std::ostream& AST::output(std::ostream& out) const
   case Type::if_t:
     out << "If";
     break;
+  case Type::define:
+    out << "Define";
+    break;
+  case Type::set:
+    out << "Set";
+    break;
   case Type::unknown:
     out << "Unknown";
     break;
@@ -250,7 +256,9 @@ Value ASTIf::eval(std::unique_ptr<Env>& env)
 Value ASTIf::quote(std::unique_ptr<Env>& env)
 {
   List ret;
-  Value tmp = test_->quote(env);
+  Value tmp{String{"if"}};
+  ret.push_back(tmp);
+  tmp = test_->quote(env);
   ret.push_back(tmp);
   tmp = true_->quote(env);
   ret.push_back(tmp);
@@ -280,6 +288,96 @@ void ASTIf::add_child(std::unique_ptr<AST> child)
   ++count_;
 }
 
+ASTDefine::ASTDefine(Token& token) :
+  AST{token}, count_{0}
+{
+  type_ = AST::Type::define;
+}
+
+void ASTDefine::add_child(std::unique_ptr<AST> child)
+{
+  if (count_ >= 2)
+  {
+    throw std::runtime_error("too many arguments for define");
+  }
+  switch(count_)
+  {
+  case 0:
+    symbol_ = std::move(child);
+    break;
+  case 1:
+    value_ = std::move(child);
+    break;
+  }
+  ++count_;
+}
+
+Value ASTDefine::eval(std::unique_ptr<Env>& env)
+{
+  Value ret = value_->eval(env);
+  env->define(symbol_->as_string(), ret);
+  return ret;
+}
+
+Value ASTDefine::quote(std::unique_ptr<Env>& env)
+{
+  List ret;
+  Value tmp{String{"define"}};
+  ret.push_back(tmp);
+  tmp = symbol_->quote(env);
+  ret.push_back(tmp);
+  tmp = value_->quote(env);
+  ret.push_back(tmp);
+  return Value{ret};
+}
+
+ASTSet::ASTSet(Token& token) :
+  AST{token}, count_{0}
+{
+  type_ = AST::Type::set;
+}
+
+Value ASTSet::eval(std::unique_ptr<Env>& env)
+{
+  Value ret = value_->eval(env);
+  env->set(symbol_->as_string(), ret);
+  if (env->error())
+  {
+    throw std::runtime_error("Error trying to set " + symbol_->as_string());
+  }
+  return ret;
+}
+
+Value ASTSet::quote(std::unique_ptr<Env>& env)
+{
+  List ret;
+  Value tmp{String{"set"}};
+  ret.push_back(tmp);
+  tmp = symbol_->quote(env);
+  ret.push_back(tmp);
+  tmp = value_->quote(env);
+  ret.push_back(tmp);
+  return Value{ret};
+}
+
+void ASTSet::add_child(std::unique_ptr<AST> child)
+{
+  if (count_ >= 2)
+  {
+    throw std::runtime_error("too many arguments for set");
+  }
+  switch(count_)
+  {
+  case 0:
+    symbol_ = std::move(child);
+    break;
+  case 1:
+    value_ = std::move(child);
+    break;
+  }
+  ++count_;
+}
+
 std::unique_ptr<AST> AST::factory(Token& token)
 {
   switch (token.type())
@@ -294,6 +392,10 @@ std::unique_ptr<AST> AST::factory(Token& token)
     return std::make_unique<ASTIf>(token);
   case Token::Type::nil:
     return std::make_unique<ASTNil>(token);
+  case Token::Type::define:
+    return std::make_unique<ASTDefine>(token);
+  case Token::Type::set:
+    return std::make_unique<ASTSet>(token);
   case Token::Type::close:
   case Token::Type::dot:
   case Token::Type::END:
@@ -317,6 +419,16 @@ std::unique_ptr<AST> AST::symbol_factory(Token& token)
     return std::make_unique<ASTBool>(token);
   }
   
+  if (lc == "set")
+  {
+    return std::make_unique<ASTSet>(token);
+  }
+
+  if (lc == "define")
+  {
+    return std::make_unique<ASTDefine>(token);
+  }
+
   if (lc == "nil")
   {
     return std::make_unique<ASTNil>(token);

@@ -42,7 +42,7 @@ void Env::set(const std::string& name, Value val)
 
 void Env::set(AtomTable::Atom id, Value val)
 {
-  had_error_ = current_->set(id, val);
+  had_error_ = !current_->set(id, val);
 }
 
 void Env::push()

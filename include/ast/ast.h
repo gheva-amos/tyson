@@ -24,6 +24,8 @@ public:
     start,
     quote,
     if_t,
+    define,
+    set,
     unknown
   };
   AST(Token& token);
@@ -69,6 +71,7 @@ public:
   virtual Value eval(std::unique_ptr<Env>& env) override;
   virtual double as_number() const override{ return value_; }
   virtual Value quote(std::unique_ptr<Env>& env) override { return Value{Number{value_}}; }
+  virtual const std::string as_string() const override { return ""; } // TODO
 private:
   double value_;
 };
@@ -95,6 +98,7 @@ public:
   virtual Value eval(std::unique_ptr<Env>& env) override;
   virtual Value quote(std::unique_ptr<Env>& env) override { return Value{Boolean{value_}}; }
   virtual bool as_bool() const { return value_; }
+  virtual const std::string as_string() const override { return value_ ? "true" : "false"; } // TODO
 private:
   bool value_;
 };
@@ -157,6 +161,32 @@ private:
   std::unique_ptr<AST> test_;
   std::unique_ptr<AST> true_;
   std::unique_ptr<AST> else_;
+};
+
+class ASTDefine : public AST
+{
+public:
+  ASTDefine(Token& token);
+  virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override;
+  void add_child(std::unique_ptr<AST> child) override;
+private:
+  unsigned count_;
+  std::unique_ptr<AST> symbol_;
+  std::unique_ptr<AST> value_;
+};
+
+class ASTSet : public AST
+{
+public:
+  ASTSet(Token& token);
+  virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override;
+  void add_child(std::unique_ptr<AST> child) override;
+private:
+  unsigned count_;
+  std::unique_ptr<AST> symbol_;
+  std::unique_ptr<AST> value_;
 };
 
 #endif // TYSON_AST_H__

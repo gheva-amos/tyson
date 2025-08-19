@@ -18,6 +18,8 @@ public:
     symbol,
     if_t,
     nil,
+    define,
+    set,
     END
   };
   Token(Type type, const std::string& text, size_t line, size_t column,

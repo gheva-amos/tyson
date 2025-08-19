@@ -158,6 +158,14 @@ Token Lexer::get_symbol()
     ss << next();
   }
   std::string compare{ss.str()};
+  if (compare == "set")
+  {
+    return {Token::Type::set, compare, l, c};
+  }
+  if (compare == "define")
+  {
+    return {Token::Type::define, compare, l, c};
+  }
   if (compare == "nil")
   {
     return {Token::Type::nil, compare, l, c};

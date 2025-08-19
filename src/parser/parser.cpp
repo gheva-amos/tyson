@@ -31,6 +31,24 @@ void Parser::parse_form(std::vector<AST*>& stack)
     }
     return;
   }
+  if (current.type() == Token::Type::set)
+  {
+    std::unique_ptr<AST> quote{std::make_unique<ASTSet>(current)};
+    AST* root = stack.back();
+    stack.push_back(quote.get());
+    root->add_child(std::move(quote));
+    parse_form(stack);
+    return;
+  }
+  if (current.type() == Token::Type::define)
+  {
+    std::unique_ptr<AST> quote{std::make_unique<ASTDefine>(current)};
+    AST* root = stack.back();
+    stack.push_back(quote.get());
+    root->add_child(std::move(quote));
+    parse_form(stack);
+    return;
+  }
   if (current.type() == Token::Type::if_t)
   {
     std::unique_ptr<AST> quote{std::make_unique<ASTIf>(current)};

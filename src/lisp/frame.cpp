@@ -1,5 +1,6 @@
 #include "lisp/frame.h"
 #include <stdexcept>
+#include <iostream>
 
 Nil Frame::nil_;
 
@@ -18,6 +19,10 @@ bool Frame::set(AtomTable::Atom id, Value val)
 {
   if (bindings_.find(id) == bindings_.end())
   {
+    if (!is_global_)
+    {
+      return parent_->set(id, val);
+    }
     return false;
   }
 
