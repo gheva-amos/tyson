@@ -31,59 +31,38 @@ void Parser::parse_form(std::vector<AST*>& stack)
     }
     return;
   }
-  if (current.type() == Token::Type::set)
+  std::unique_ptr<AST> next{nullptr};
+  
+  switch (current.type())
   {
-    std::unique_ptr<AST> quote{std::make_unique<ASTSet>(current)};
-    AST* root = stack.back();
-    stack.push_back(quote.get());
-    root->add_child(std::move(quote));
-    parse_form(stack);
-    return;
-  }
-  if (current.type() == Token::Type::define)
-  {
-    std::unique_ptr<AST> quote{std::make_unique<ASTDefine>(current)};
-    AST* root = stack.back();
-    stack.push_back(quote.get());
-    root->add_child(std::move(quote));
-    parse_form(stack);
-    return;
-  }
-  if (current.type() == Token::Type::if_t)
-  {
-    std::unique_ptr<AST> quote{std::make_unique<ASTIf>(current)};
-    AST* root = stack.back();
-    stack.push_back(quote.get());
-    root->add_child(std::move(quote));
-    parse_form(stack);
-    return;
-  }
-  if (current.type() == Token::Type::quote)
-  {
-    std::unique_ptr<AST> quote{std::make_unique<ASTQuote>(current)};
-    AST* root = stack.back();
-    stack.push_back(quote.get());
-    root->add_child(std::move(quote));
-    parse_form(stack);
-    return;
-  }
-  if (current.type() == Token::Type::open)
-  {
-    std::unique_ptr<AST> list{std::make_unique<ASTList>(current)};
-    AST* root = stack.back();
-    stack.push_back(list.get());
-    root->add_child(std::move(list));
-    parse_form(stack);
-    return;
-  }
-  if (current.type() == Token::Type::close)
-  {
-   // TODO if empty list retun nil
+  case Token::Type::set:
+    next = std::make_unique<ASTSet>(current);
+    break;
+  case Token::Type::define:
+    next = std::make_unique<ASTDefine>(current);
+    break;
+  case Token::Type::if_t:
+    next = std::make_unique<ASTIf>(current);
+    break;
+  case Token::Type::quote:
+    next = std::make_unique<ASTQuote>(current);
+    break;
+  case Token::Type::open:
+    next = std::make_unique<ASTList>(current);
+    break;
+  case Token::Type::close:
     stack.pop_back();
-    parse_form(stack);
-    return;
+    break;
+  default:
+    stack.back()->add_child(std::move(AST::factory(current)));
+    break;
   }
-  stack.back()->add_child(std::move(AST::factory(current)));
+  if (next != nullptr)
+  {
+    AST* root = stack.back();
+    stack.push_back(next.get());
+    root->add_child(std::move(next));
+  }
   parse_form(stack);
 }
 
