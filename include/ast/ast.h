@@ -22,6 +22,7 @@ public:
     symbol,
     list,
     start,
+    quote,
     unknown
   };
   AST(Token& token);
@@ -34,6 +35,10 @@ public:
   const std::string& str() const { return print_value_; }
   virtual std::ostream& output(std::ostream& out) const;
   virtual Value eval(std::unique_ptr<Env>& env) = 0;
+  virtual bool as_bool() const { return true; }
+  virtual double as_number() const { return 0.0; }
+  virtual const std::string as_string() const { return ""; }
+  virtual Value quote(std::unique_ptr<Env>& env) { return Value{Nil{}}; }
 protected:
   size_t line_;
   size_t column_;
@@ -61,6 +66,8 @@ public:
   double value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
   virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual double as_number() const override{ return value_; }
+  virtual Value quote(std::unique_ptr<Env>& env) override { return Value{Number{value_}}; }
 private:
   double value_;
 };
@@ -72,6 +79,8 @@ public:
   const std::string& value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
   virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual const std::string as_string() const override { return value_; }
+  virtual Value quote(std::unique_ptr<Env>& env) override { return Value{String{value_}}; }
 private:
   std::string value_;
 };
@@ -83,6 +92,8 @@ public:
   bool value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
   virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override { return Value{Boolean{value_}}; }
+  virtual bool as_bool() const { return value_; }
 private:
   bool value_;
 };
@@ -94,6 +105,7 @@ public:
   void add_child(std::unique_ptr<AST> child) override;
   virtual std::ostream& output(std::ostream& out) const;
   virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override;
 private:
   std::vector<std::unique_ptr<AST>> value_;
 };
@@ -105,6 +117,8 @@ public:
   const std::string& value() const { return value_; }
   virtual std::ostream& output(std::ostream& out) const;
   virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual const std::string as_string() const override { return value_; }
+  virtual Value quote(std::unique_ptr<Env>& env) override;
 private:
   std::string value_;
 };
@@ -117,6 +131,17 @@ public:
   virtual Value eval(std::unique_ptr<Env>& env) override;
 private:
   std::string value_;
+};
+
+class ASTQuote : public AST
+{
+public:
+  ASTQuote(Token& token);
+  const std::string& value() const;
+  void add_child(std::unique_ptr<AST> child) override;
+  virtual Value eval(std::unique_ptr<Env>& env) override;
+private:
+  std::unique_ptr<AST> value_;
 };
 
 #endif // TYSON_AST_H__

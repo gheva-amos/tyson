@@ -60,6 +60,16 @@ void Env::pop()
   }
 }
 
+AtomTable::Atom Env::intern(const std::string& symbol)
+{
+  return symbols_.intern(symbol);
+}
+
+const std::string& Env::get_name(AtomTable::Atom id)
+{
+  return symbols_.value(id);
+}
+
 ScopedEnv::ScopedEnv(Env& env) : env_{env}
 {
   env_.push();

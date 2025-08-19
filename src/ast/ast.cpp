@@ -35,6 +35,9 @@ std::ostream& AST::output(std::ostream& out) const
   case Type::start:
     out << "Start";
     break;
+  case Type::quote:
+    out << "Quote";
+    break;
   case Type::unknown:
     out << "Unknown";
     break;
@@ -67,11 +70,7 @@ std::ostream& ASTNumber::output(std::ostream& out) const
 Value ASTNumber::eval(std::unique_ptr<Env>& env)
 {
 
-  Number num;
-  num = value_;
-  Value ret;
-  ret = num;
-  return ret;
+  return Value{Number{value_}};
 }
 
 ASTString::ASTString(Token& token) :
@@ -88,11 +87,7 @@ std::ostream& ASTString::output(std::ostream& out) const
 
 Value ASTString::eval(std::unique_ptr<Env>& env)
 {
-  String str;
-  str = value_;
-  Value ret;
-  ret = str;
-  return ret;
+  return Value{String{value_}};
 }
 
 ASTBool::ASTBool(Token& token) :
@@ -115,11 +110,7 @@ std::ostream& ASTBool::output(std::ostream& out) const
 
 Value ASTBool::eval(std::unique_ptr<Env>& env)
 {
-  Boolean b;
-  b = value_;
-  Value ret;
-  ret = b;
-  return ret;
+  return Value{Boolean{value_}};
 }
 
 ASTList::ASTList(Token& token) :
@@ -165,6 +156,17 @@ Value ASTList::eval(std::unique_ptr<Env>& env)
   return ret;
 }
 
+Value ASTList::quote(std::unique_ptr<Env>& env)
+{
+  List ret;
+  for (auto& ast : value_)
+  {
+    Value v{ast->quote(env)};
+    ret.push_back(v);
+  }
+  return Value{ret};
+}
+
 ASTSymbol::ASTSymbol(Token& token) :
   AST{token}, value_{token.string()}
 {
@@ -187,6 +189,12 @@ std::ostream& ASTSymbol::output(std::ostream& out) const
   return out;
 }
 
+Value ASTSymbol::quote(std::unique_ptr<Env>& env)
+{
+  AtomTable::Atom id{env->intern(value_)};
+  return Value{Symbol{id}};
+}
+
 ASTNil::ASTNil(Token& token) :
   AST{token}, value_{token.string()}
 {
@@ -200,10 +208,23 @@ ASTNil::ASTNil(Token& token) :
 
 Value ASTNil::eval(std::unique_ptr<Env>& env)
 {
-  Nil nil;
-  Value ret;
-  ret = nil;
-  return ret;
+  return Value{Nil{}};
+}
+
+ASTQuote::ASTQuote(Token& token) :
+  AST{token}
+{
+  type_ = AST::Type::quote;
+}
+
+void ASTQuote::add_child(std::unique_ptr<AST> child)
+{
+  value_ = std::move(child);
+}
+
+Value ASTQuote::eval(std::unique_ptr<Env>& env)
+{
+  return value_->quote(env);
 }
 
 std::unique_ptr<AST> AST::factory(Token& token)
@@ -241,6 +262,11 @@ std::unique_ptr<AST> AST::symbol_factory(Token& token)
   if (lc == "nil")
   {
     return std::make_unique<ASTNil>(token);
+  }
+
+  if (lc == "quote")
+  {
+    return std::make_unique<ASTQuote>(token);
   }
 
   return std::make_unique<ASTSymbol>(token);

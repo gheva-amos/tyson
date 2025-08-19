@@ -157,6 +157,10 @@ Token Lexer::get_symbol()
     }
     ss << next();
   }
+  if (ss.str() == "quote")
+  {
+    return {Token::Type::quote, ss.str(), l, c};
+  }
   return {Token::Type::symbol, ss.str(), l, c};
 }
 

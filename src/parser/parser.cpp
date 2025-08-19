@@ -30,6 +30,15 @@ void Parser::parse_form(std::vector<AST*>& stack)
     }
     return;
   }
+  if (current.type() == Token::Type::quote)
+  {
+    std::unique_ptr<AST> quote{std::make_unique<ASTQuote>(current)};
+    AST* root = stack.back();
+    stack.push_back(quote.get());
+    root->add_child(std::move(quote));
+    parse_form(stack);
+    return;
+  }
   if (current.type() == Token::Type::open)
   {
     std::unique_ptr<AST> list{std::make_unique<ASTList>(current)};

@@ -18,6 +18,8 @@ public:
   void set(AtomTable::Atom id, Value val);
   void push();
   void pop();
+  AtomTable::Atom intern(const std::string& symbol);
+  const std::string& get_name(AtomTable::Atom id);
 private:
   AtomTable symbols_{};
   std::shared_ptr<Frame> current_;
