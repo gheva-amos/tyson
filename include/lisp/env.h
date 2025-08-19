@@ -9,7 +9,7 @@ class Env
 {
 public:
   Env(std::shared_ptr<Frame> current);
-  Env();
+  explicit Env();
   Value lookup(const std::string& symbol);
   Value lookup(AtomTable::Atom symbol);
   bool error() const { return had_error_; }
@@ -22,6 +22,7 @@ private:
   AtomTable symbols_{};
   std::shared_ptr<Frame> current_;
   bool had_error_;
+  void load_primitives();
 };
 
 class ScopedEnv

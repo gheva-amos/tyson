@@ -9,6 +9,7 @@ Env::Env() :
   current_{nullptr}, had_error_{false}
 {
   current_ = std::make_shared<Frame>(symbols_, nullptr, true);
+  load_primitives();
 }
 
 Value Env::lookup(const std::string& symbol)
