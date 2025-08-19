@@ -19,7 +19,7 @@ add_subdirectory(lisp)
 add_executable(tyson repl.cpp)
 target_compile_options(tyson PRIVATE -Wall -Wextra -pedantic -Wno-enum-compare -Wno-maybe-uninitialized -Wno-uninitialized -Wno-unused-parameter)
 set_target_properties(tyson PROPERTIES RUNTIME_OUTPUT_DIRECTORY "bin")
-target_link_libraries(tyson PRIVATE replxx::replxx)
+target_link_libraries(tyson PRIVATE replxx::replxx lexer parser ast lisp)
 
 add_executable(experiments experiments.cpp)
 target_compile_options(experiments PRIVATE -Wall -Wextra -pedantic -Wno-enum-compare -Wno-maybe-uninitialized -Wno-uninitialized -Wno-unused-parameter)
