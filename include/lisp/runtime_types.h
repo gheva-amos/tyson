@@ -39,6 +39,8 @@ class Boolean : public Object
 {
 public:
   virtual std::ostream& output(std::ostream& out) const override;
+  Boolean() = default;
+  Boolean(bool b) : value_{b} {}
   Boolean& operator=(bool value);
 private:
   bool value_;
@@ -48,6 +50,9 @@ class Number : public Object
 {
 public:
   virtual std::ostream& output(std::ostream& out) const override;
+  Number() = default;
+  Number(double d) : value_{d} {}
+  Number(int i) : value_{i} {}
   Number& operator=(double value);
   Number& operator=(int value);
   bool is_int() const { return std::holds_alternative<int>(value_); }
@@ -61,6 +66,8 @@ class String : public Object
 {
 public:
   virtual std::ostream& output(std::ostream& out) const override;
+  String() = default;
+  String(const std::string& s) : value_{s} {}
   String& operator=(const std::string& value);
 private:
   std::string value_;
@@ -70,6 +77,8 @@ class Symbol : public Object
 {
 public:
   virtual std::ostream& output(std::ostream& out) const override;
+  Symbol() = default;
+  Symbol(AtomTable::Atom id) : value_{id} {}
 private:
   AtomTable::Atom value_;
 };
@@ -89,13 +98,16 @@ private:
 class Primitive : public Object
 {
 public:
+  using Function = std::function<Value(std::span<const Value>)>;
+  Primitive() = default;
+  Primitive(const std::string& name, Function f) : name_{name}, function_{f} {}
   virtual std::ostream& output(std::ostream& out) const override;
   void set_name(const std::string& name);
   Value operator()(std::span<const Value> args) { return function_(args); }
-  void set_function(std::function<Value(std::span<const Value>)> func);
+  void set_function(Function func);
 private:
   std::string name_;
-  std::function<Value(std::span<const Value>)> function_;
+  Function function_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Value& v);
