@@ -20,6 +20,7 @@ public:
     nil,
     define,
     set,
+    let,
     END
   };
   Token(Type type, const std::string& text, size_t line, size_t column,

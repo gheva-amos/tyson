@@ -26,6 +26,7 @@ public:
     if_t,
     define,
     set,
+    let,
     unknown
   };
   AST(Token& token);
@@ -98,7 +99,7 @@ public:
   virtual Value eval(std::unique_ptr<Env>& env) override;
   virtual Value quote(std::unique_ptr<Env>& env) override { return Value{Boolean{value_}}; }
   virtual bool as_bool() const { return value_; }
-  virtual const std::string as_string() const override { return value_ ? "true" : "false"; } // TODO
+  virtual const std::string as_string() const override { return value_ ? "true" : "false"; }
 private:
   bool value_;
 };
@@ -111,6 +112,8 @@ public:
   virtual std::ostream& output(std::ostream& out) const;
   virtual Value eval(std::unique_ptr<Env>& env) override;
   virtual Value quote(std::unique_ptr<Env>& env) override;
+  AST* get_child_at(size_t index) { return value_[index].get(); }
+  size_t size() const { return value_.size(); }
 private:
   std::vector<std::unique_ptr<AST>> value_;
 };
@@ -187,6 +190,18 @@ private:
   unsigned count_;
   std::unique_ptr<AST> symbol_;
   std::unique_ptr<AST> value_;
+};
+
+class ASTLet : public AST
+{
+public:
+  ASTLet(Token& token);
+  virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override;
+  void add_child(std::unique_ptr<AST> child) override;
+private:
+  std::unique_ptr<AST> bindings_;
+  std::vector<std::unique_ptr<AST>> statements_;
 };
 
 #endif // TYSON_AST_H__

@@ -47,6 +47,9 @@ std::ostream& AST::output(std::ostream& out) const
   case Type::set:
     out << "Set";
     break;
+  case Type::let:
+    out << "Let";
+    break;
   case Type::unknown:
     out << "Unknown";
     break;
@@ -78,7 +81,6 @@ std::ostream& ASTNumber::output(std::ostream& out) const
 
 Value ASTNumber::eval(std::unique_ptr<Env>& env)
 {
-
   return Value{Number{value_}};
 }
 
@@ -187,7 +189,7 @@ Value ASTSymbol::eval(std::unique_ptr<Env>& env)
   auto ret{env->lookup(value_)};
   if (env->error())
   {
-    throw std::runtime_error("Could not find symbol " + value_);
+throw std::runtime_error("Could not find symbol " + value_);
   }
   return ret;
 }
@@ -378,6 +380,67 @@ void ASTSet::add_child(std::unique_ptr<AST> child)
   ++count_;
 }
 
+ASTLet::ASTLet(Token& token) :
+  AST{token}, bindings_{nullptr}
+{
+}
+
+Value ASTLet::eval(std::unique_ptr<Env>& env)
+{
+  ASTList* lst = dynamic_cast<ASTList*>(bindings_.get());
+  
+  std::vector<Value> values{};
+  for (size_t i{0}; i < lst->size(); ++i)
+  {
+    ASTList* ast = dynamic_cast<ASTList*>(lst->get_child_at(i));
+    if (ast->size() != 2)
+    {
+      throw std::runtime_error("Let with a wrong shape of binding");
+    }
+    values.push_back(ast->get_child_at(1)->eval(env));
+  }
+  env->push();
+  for (size_t i{0}; i < values.size(); ++i)
+  {
+    ASTList* ast = dynamic_cast<ASTList*>(lst->get_child_at(i));
+    env->define(ast->get_child_at(0)->as_string(), values[i]); 
+  }
+  Value ret;
+  for (auto& ast : statements_)
+  {
+    ret = ast->eval(env);
+  }
+  env->pop();
+  return ret;
+}
+
+Value ASTLet::quote(std::unique_ptr<Env>& env)
+{
+  List ret;
+  Value tmp{String{"let"}};
+  ret.push_back(tmp);
+  tmp = bindings_->quote(env);
+  ret.push_back(tmp);
+  for (auto& statement : statements_)
+  {
+    tmp = statement->quote(env);
+    ret.push_back(tmp);
+  }
+  return Value{ret};
+}
+
+void ASTLet::add_child(std::unique_ptr<AST> child)
+{
+  if (bindings_ == nullptr)
+  {
+    bindings_ = std::move(child);
+  }
+  else
+  {
+    statements_.push_back(std::move(child));
+  }
+}
+
 std::unique_ptr<AST> AST::factory(Token& token)
 {
   switch (token.type())
@@ -396,6 +459,8 @@ std::unique_ptr<AST> AST::factory(Token& token)
     return std::make_unique<ASTDefine>(token);
   case Token::Type::set:
     return std::make_unique<ASTSet>(token);
+  case Token::Type::let:
+    return std::make_unique<ASTLet>(token);
   case Token::Type::close:
   case Token::Type::dot:
   case Token::Type::END:
@@ -442,6 +507,11 @@ std::unique_ptr<AST> AST::symbol_factory(Token& token)
   if (lc == "if")
   {
     return std::make_unique<ASTIf>(token);
+  }
+
+  if (lc == "let")
+  {
+    return std::make_unique<ASTLet>(token);
   }
 
   return std::make_unique<ASTSymbol>(token);

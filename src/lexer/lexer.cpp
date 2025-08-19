@@ -178,6 +178,10 @@ Token Lexer::get_symbol()
   {
     return {Token::Type::quote, compare, l, c};
   }
+  if (compare == "let")
+  {
+    return {Token::Type::let, compare, l, c};
+  }
   return {Token::Type::symbol, compare, l, c};
 }
 
