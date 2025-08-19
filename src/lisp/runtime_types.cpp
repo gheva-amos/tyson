@@ -100,6 +100,27 @@ void List::push_back(Value& val)
   values_.push_back(val);
 }
 
+Value& List::operator[](size_t index)
+{
+  return values_[index];
+}
+
+void Primitive::set_name(const std::string& name)
+{
+  name_ = name;
+}
+
+void Primitive::set_function(std::function<Value(std::span<const Value>)> func)
+{
+  function_ = func;
+}
+
+std::ostream& Primitive::output(std::ostream& out) const
+{
+  out << "Primitive: " << name_;
+  return out;
+}
+
 /*
 Pair,
 Primitive,

@@ -4,6 +4,7 @@
 #include <variant>
 #include <vector>
 #include <functional>
+#include <span>
 #include "lisp/atom_table.h"
 
 class Nil;
@@ -12,7 +13,8 @@ class Number;
 class String;
 class Symbol;
 class List;
-using Value = std::variant<Nil, Boolean, Number, String, Symbol, List>;
+class Primitive;
+using Value = std::variant<Nil, Boolean, Number, String, Symbol, List, Primitive>;
 
 class Object
 {
@@ -72,14 +74,28 @@ private:
   AtomTable::Atom value_;
 };
 
-
 class List : public Object
 {
 public:
   virtual std::ostream& output(std::ostream& out) const override;
   void push_back(Value& val);
+  Value& operator[](size_t index);
+  std::vector<Value>::iterator begin() { return values_.begin(); }
+  std::vector<Value>::iterator end() { return values_.end(); }
 private:
   std::vector<Value> values_;
+};
+
+class Primitive : public Object
+{
+public:
+  virtual std::ostream& output(std::ostream& out) const override;
+  void set_name(const std::string& name);
+  Value operator()(std::span<const Value> args) { return function_(args); }
+  void set_function(std::function<Value(std::span<const Value>)> func);
+private:
+  std::string name_;
+  std::function<Value(std::span<const Value>)> function_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Value& v);

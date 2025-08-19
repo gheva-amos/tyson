@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include "lisp/runtime_types.h"
+#include <iostream>
 
 AST::AST(Token& token) :
   line_{token.line()}, column_{token.column()}, type_{Type::unknown}, print_value_{token.string()}
@@ -152,6 +153,12 @@ Value ASTList::eval(std::unique_ptr<Env>& env)
   {
     Value val{ast->eval(env)};
     l.push_back(val);
+  }
+  Value& first{l[0]};
+  if (std::holds_alternative<Primitive>(first))
+  {
+    std::span<Value> args{l.begin() + 1, l.end()};
+    return std::get<Primitive>(first).operator()(args);
   }
   Value ret;
   ret = l;
