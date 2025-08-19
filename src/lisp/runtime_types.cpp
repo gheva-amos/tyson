@@ -71,6 +71,35 @@ std::ostream& Symbol::output(std::ostream& out) const
   return out;
 }
 
+template<class... Ts> struct Overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> Overloaded(Ts...) -> Overloaded<Ts...>;
+
+std::ostream& operator<<(std::ostream& os, const Value& value)
+{
+  std::visit([&](const auto& x) {
+        // handle x, possibly with if constexpr on its type
+      os << x;
+      }, value);
+  return os;
+}
+
+std::ostream& List::output(std::ostream& out) const
+{
+  out << '(';
+  for (auto& v : values_)
+  {
+    out << ' ' << v;
+//    v.output(out);
+  }
+  out << ')';
+  return out;
+}
+
+void List::push_back(Value& val)
+{
+  values_.push_back(val);
+}
+
 /*
 Pair,
 Primitive,

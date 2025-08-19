@@ -2,7 +2,17 @@
 #define TYSON_RUNTIME_TYPES_H__
 #include <ostream>
 #include <variant>
+#include <vector>
+#include <functional>
 #include "lisp/atom_table.h"
+
+class Nil;
+class Boolean;
+class Number;
+class String;
+class Symbol;
+class List;
+using Value = std::variant<Nil, Boolean, Number, String, Symbol, List>;
 
 class Object
 {
@@ -10,6 +20,12 @@ public:
   virtual ~Object() = default;
   virtual std::ostream& output(std::ostream& out) const = 0;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const Object& o)
+{
+    o.output(os);
+    return os;
+}
 
 class Nil : public Object
 {
@@ -55,5 +71,17 @@ public:
 private:
   AtomTable::Atom value_;
 };
+
+
+class List : public Object
+{
+public:
+  virtual std::ostream& output(std::ostream& out) const override;
+  void push_back(Value& val);
+private:
+  std::vector<Value> values_;
+};
+
+std::ostream& operator<<(std::ostream& os, const Value& v);
 
 #endif // TYSON_RUNTIME_TYPES_H__
