@@ -1,5 +1,7 @@
 #include "lisp/runtime_types.h"
+#include "lisp/env.h"
 #include "lisp/value.h"
+#include <iostream>
 
 std::ostream& Nil::output(std::ostream& out) const
 {
@@ -111,6 +113,27 @@ Value List::cdr() const
   return Value{ret};
 }
 
+size_t List::size() const
+{
+  return values_.size();
+}
+
+Value List::execute(std::unique_ptr<Env>& env, bool run_lambda)
+{
+  Value& first{values_[0]};
+  if (first.is_primitive())
+  {
+    std::span<Value> args{begin() + 1, end()};
+    return first.as_primitive()(args);
+  }
+  if (first.is_list() && first.as_list()[0].is_lambda())
+  {
+    std::span<Value> args{begin() + 1, end()};
+    return first.as_list()[0].as_lambda()(args, env);
+  }
+  return Value{Nil{}};
+}
+
 void Primitive::set_name(const std::string& name)
 {
   name_ = name;
@@ -130,5 +153,48 @@ std::ostream& Primitive::output(std::ostream& out) const
 Value Primitive::operator()(std::span<const Value> args)
 {
   return function_(args);
+}
+
+std::ostream& Lambda::output(std::ostream& out) const
+{
+  out << "Lambda";
+  return out;
+}
+
+void Lambda::add_statement(Value v)
+{
+  statements_.push_back(v);
+}
+
+Value Lambda::operator()(std::span<const Value> args, std::unique_ptr<Env>& env)
+{
+  if (args.size() != args_.size())
+  {
+    throw std::runtime_error("wrong number of arguments passed to lambda");
+  }
+  env->push();
+  for (size_t i{0}; i < args.size(); ++i)
+  {
+    env->define(args_[i].as_string().value(), args[i]);
+  }
+  for (auto s : statements_)
+  {
+    if (s.is_list())
+    {
+      List statement = s.as_list();
+      statement.execute(env, true);
+    }
+  }
+  env->pop();
+  return String{"jhel"};
+}
+
+void Lambda::add_arg(Value v)
+{
+  if (!v.is_list())
+  {
+    throw std::runtime_error("calling lambda without an argument list");
+  }
+  args_ = v.as_list();
 }
 

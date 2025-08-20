@@ -27,6 +27,7 @@ public:
     define,
     set,
     let,
+    lambda,
     unknown
   };
   AST(Token& token);
@@ -196,6 +197,18 @@ class ASTLet : public AST
 {
 public:
   ASTLet(Token& token);
+  virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override;
+  void add_child(std::unique_ptr<AST> child) override;
+private:
+  std::unique_ptr<AST> bindings_;
+  std::vector<std::unique_ptr<AST>> statements_;
+};
+
+class ASTLambda : public AST
+{
+public:
+  ASTLambda(Token& token);
   virtual Value eval(std::unique_ptr<Env>& env) override;
   virtual Value quote(std::unique_ptr<Env>& env) override;
   void add_child(std::unique_ptr<AST> child) override;

@@ -182,6 +182,10 @@ Token Lexer::get_symbol()
   {
     return {Token::Type::let, compare, l, c};
   }
+  if (compare == "lambda")
+  {
+    return {Token::Type::lambda, compare, l, c};
+  }
   return {Token::Type::symbol, compare, l, c};
 }
 

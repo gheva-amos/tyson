@@ -35,6 +35,9 @@ void Parser::parse_form(std::vector<AST*>& stack)
   
   switch (current.type())
   {
+  case Token::Type::lambda:
+    next = std::make_unique<ASTLambda>(current);
+    break;
   case Token::Type::let:
     next = std::make_unique<ASTLet>(current);
     break;

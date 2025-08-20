@@ -21,6 +21,7 @@ public:
     define,
     set,
     let,
+    lambda,
     END
   };
   Token(Type type, const std::string& text, size_t line, size_t column,

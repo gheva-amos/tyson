@@ -8,17 +8,8 @@
 #include "lisp/atom_table.h"
 #include <memory>
 
-class Nil;
-class Boolean;
-class Number;
-class String;
-class Symbol;
-class List;
-class Primitive;
-
 class Value;
-//using Value = std::variant<Nil, Boolean, Number, String, Symbol, List, Primitive>;
-
+class Env;
 
 class Object
 {
@@ -77,6 +68,7 @@ public:
   String(const std::string& s) : value_{s} {}
   String& operator=(const std::string& value);
   virtual bool is_true() const override { return !value_.empty(); }
+  const std::string& value() { return value_; }
 private:
   std::string value_;
 };
@@ -88,6 +80,7 @@ public:
   Symbol() = default;
   Symbol(AtomTable::Atom id) : value_{id} {}
   virtual bool is_true() const override { return true; }
+  AtomTable::Atom id() { return value_; }
 private:
   AtomTable::Atom value_;
 };
@@ -102,7 +95,9 @@ public:
   std::vector<Value>::iterator end() { return values_.end(); }
   Value car() const;
   Value cdr() const;
+  Value execute(std::unique_ptr<Env>& env, bool run_lambda=false);
   virtual bool is_true() const override { return !values_.empty(); }
+  size_t size() const;
 private:
   std::vector<Value> values_;
 };
@@ -121,6 +116,19 @@ public:
 private:
   std::string name_;
   Function function_;
+};
+
+class Lambda : public Object
+{
+public:
+  virtual std::ostream& output(std::ostream& out) const override;
+  Value operator()(std::span<const Value> args, std::unique_ptr<Env>& env);
+  void add_statement(Value v);
+  void add_arg(Value v);
+private:
+  std::string name_;
+  std::vector<Value> statements_;
+  List args_;
 };
 
 #endif // TYSON_RUNTIME_TYPES_H__
