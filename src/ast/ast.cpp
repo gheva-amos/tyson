@@ -157,10 +157,10 @@ Value ASTList::eval(std::unique_ptr<Env>& env)
     l.push_back(val);
   }
   Value& first{l[0]};
-  if (std::holds_alternative<Primitive>(first))
+  if (first.is_primitive())
   {
     std::span<Value> args{l.begin() + 1, l.end()};
-    return std::get<Primitive>(first).operator()(args);
+    return first.as_primitive()(args);
   }
   Value ret;
   ret = l;
@@ -248,7 +248,7 @@ Value ASTIf::eval(std::unique_ptr<Env>& env)
 {
   Value test{test_->eval(env)};
 
-  if (is_true(test))
+  if (test.is_true())
   {
     return true_->eval(env);
   }
@@ -383,6 +383,7 @@ void ASTSet::add_child(std::unique_ptr<AST> child)
 ASTLet::ASTLet(Token& token) :
   AST{token}, bindings_{nullptr}
 {
+  type_ = AST::Type::let;
 }
 
 Value ASTLet::eval(std::unique_ptr<Env>& env)

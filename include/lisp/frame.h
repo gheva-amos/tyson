@@ -2,6 +2,7 @@
 #define TYSON_FRAME_H__
 #include "lisp/atom_table.h"
 #include "lisp/runtime_types.h"
+#include "lisp/value.h"
 #include <variant>
 #include <unordered_map>
 #include <memory>

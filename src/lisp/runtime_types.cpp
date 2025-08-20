@@ -1,4 +1,5 @@
 #include "lisp/runtime_types.h"
+#include "lisp/value.h"
 
 std::ostream& Nil::output(std::ostream& out) const
 {
@@ -71,18 +72,6 @@ std::ostream& Symbol::output(std::ostream& out) const
   return out;
 }
 
-template<class... Ts> struct Overloaded : Ts... { using Ts::operator()...; };
-template<class... Ts> Overloaded(Ts...) -> Overloaded<Ts...>;
-
-std::ostream& operator<<(std::ostream& os, const Value& value)
-{
-  std::visit([&](const auto& x) {
-        // handle x, possibly with if constexpr on its type
-      os << x;
-      }, value);
-  return os;
-}
-
 std::ostream& List::output(std::ostream& out) const
 {
   out << '(';
@@ -138,11 +127,8 @@ std::ostream& Primitive::output(std::ostream& out) const
   return out;
 }
 
-bool is_true(const Value& v)
+Value Primitive::operator()(std::span<const Value> args)
 {
-  return std::visit([](auto const& x) -> bool { return x.is_true(); }, v);
+  return function_(args);
 }
-/*
-Pair,
-Primitive,
-*/
+

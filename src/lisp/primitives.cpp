@@ -9,9 +9,9 @@ void Env::load_primitives()
       double accumulator{0.0};
       for (auto& v : args)
       {
-        if (std::holds_alternative<Number>(v))
+        if (v.is_number())
         {
-          accumulator += std::get<Number>(v).as_double();
+          accumulator += v.as_number().as_double();
         }
         else
         {
@@ -30,12 +30,12 @@ void Env::load_primitives()
         if (first)
         {
           first = false;
-          accumulator = std::get<Number>(v).as_double();
+          accumulator = v.as_number().as_double();
           continue;
         }
-        if (std::holds_alternative<Number>(v))
+        if (v.is_number())
         {
-          accumulator -= std::get<Number>(v).as_double();
+          accumulator -= v.as_number().as_double();
         }
         else
         {
@@ -54,9 +54,9 @@ void Env::load_primitives()
       double accumulator{1.0};
       for (auto& v : args)
       {
-        if (std::holds_alternative<Number>(v))
+        if (v.is_number())
         {
-          accumulator *= std::get<Number>(v).as_double();
+          accumulator *= v.as_number().as_double();
         }
         else
         {
@@ -68,13 +68,13 @@ void Env::load_primitives()
   });
   define("/", Primitive{"DIV",
     [](std::span<const Value> args) -> Value {
-      double accumulator{std::get<Number>(args[0]).as_double()};
+      double accumulator{args[0].as_number().as_double()};
       for (size_t i{1}; i < args.size(); ++i)
       {
         const Value& v{args[i]};
-        if (std::holds_alternative<Number>(v))
+        if (v.is_number())
         {
-          accumulator /= std::get<Number>(v).as_double();
+          accumulator /= v.as_number().as_double();
         }
         else
         {
@@ -101,11 +101,11 @@ void Env::load_primitives()
       {
         throw std::runtime_error("car works only on a single list");
       }
-      if (!std::holds_alternative<List>(v))
+      if (!v.is_list())
       {
         throw std::runtime_error("car works only on a list");
       }
-      List list{std::get<List>(v)};
+      List list{v.as_list()};
       return list.car();
     }
   });
@@ -116,11 +116,11 @@ void Env::load_primitives()
       {
         throw std::runtime_error("car works only on a single list");
       }
-      if (!std::holds_alternative<List>(v))
+      if (!v.is_list())
       {
         throw std::runtime_error("car works only on a list");
       }
-      List list{std::get<List>(v)};
+      List list{v.as_list()};
       return list.cdr();
     }
   });
@@ -145,9 +145,9 @@ void Env::load_primitives()
       ret.push_back(v);
       v = args[1];
 
-      if (std::holds_alternative<List>(v))
+      if (v.is_list())
       {
-        List l = std::get<List>(v);
+        List l = v.as_list();
         for (auto& c : l)
         {
           ret.push_back(c);
@@ -166,17 +166,17 @@ void Env::load_primitives()
       double current;
       for (auto& v : args)
       {
-        if (!std::holds_alternative<Number>(v))
+        if (!v.is_number())
         {
             throw std::runtime_error("Comparing non numbers");
         }
         if (first)
         {
           first = false;
-          current = std::get<Number>(v).as_double();
+          current = v.as_number().as_double();
           continue;
         }
-        double compare_to = std::get<Number>(v).as_double();
+        double compare_to = v.as_number().as_double();
         if (current >= compare_to)
         {
           return Value{Boolean{false}};
@@ -192,17 +192,17 @@ void Env::load_primitives()
       double current;
       for (auto& v : args)
       {
-        if (!std::holds_alternative<Number>(v))
+        if (!v.is_number())
         {
             throw std::runtime_error("Comparing non numbers");
         }
         if (first)
         {
           first = false;
-          current = std::get<Number>(v).as_double();
+          current = v.as_number().as_double();
           continue;
         }
-        double compare_to = std::get<Number>(v).as_double();
+        double compare_to = v.as_number().as_double();
         if (current <= compare_to)
         {
           return Value{Boolean{false}};
@@ -218,17 +218,17 @@ void Env::load_primitives()
       double current;
       for (auto& v : args)
       {
-        if (!std::holds_alternative<Number>(v))
+        if (!v.is_number())
         {
             throw std::runtime_error("Comparing non numbers");
         }
         if (first)
         {
           first = false;
-          current = std::get<Number>(v).as_double();
+          current = v.as_number().as_double();
           continue;
         }
-        double compare_to = std::get<Number>(v).as_double();
+        double compare_to = v.as_number().as_double();
         if (current != compare_to)
         {
           return Value{Boolean{false}};

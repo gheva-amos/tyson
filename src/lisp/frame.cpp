@@ -44,7 +44,7 @@ Value Frame::lookup(AtomTable::Atom id, bool& ret) const
     if (is_global_)
     {
       ret = false;
-      return nil_;
+      return Value();
     }
     return parent_->lookup(id, ret);
   }

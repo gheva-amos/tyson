@@ -14,8 +14,8 @@ TEST(FrameConstructor, LispTests)
   bool found{false};
   auto value = child.lookup("A", found);
   EXPECT_TRUE(found);
-  EXPECT_TRUE(std::holds_alternative<Number>(value));
-  auto num = std::get<Number>(value);
+  EXPECT_TRUE(value.is_number());
+  auto num = value.as_number();
   EXPECT_TRUE(num.is_int());
   EXPECT_EQ(num.as_int(), start);
 }

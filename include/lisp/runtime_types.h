@@ -6,6 +6,7 @@
 #include <functional>
 #include <span>
 #include "lisp/atom_table.h"
+#include <memory>
 
 class Nil;
 class Boolean;
@@ -14,7 +15,10 @@ class String;
 class Symbol;
 class List;
 class Primitive;
-using Value = std::variant<Nil, Boolean, Number, String, Symbol, List, Primitive>;
+
+class Value;
+//using Value = std::variant<Nil, Boolean, Number, String, Symbol, List, Primitive>;
+
 
 class Object
 {
@@ -111,16 +115,12 @@ public:
   Primitive(const std::string& name, Function f) : name_{name}, function_{f} {}
   virtual std::ostream& output(std::ostream& out) const override;
   void set_name(const std::string& name);
-  Value operator()(std::span<const Value> args) { return function_(args); }
+  Value operator()(std::span<const Value> args);
   void set_function(Function func);
   virtual bool is_true() const override { return true; }
 private:
   std::string name_;
   Function function_;
 };
-
-std::ostream& operator<<(std::ostream& os, const Value& v);
-
-bool is_true(const Value& v);
 
 #endif // TYSON_RUNTIME_TYPES_H__
