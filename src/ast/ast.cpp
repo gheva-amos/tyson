@@ -156,12 +156,7 @@ Value ASTList::eval(std::unique_ptr<Env>& env)
     Value val{ast->eval(env)};
     l.push_back(val);
   }
-  Value& first{l[0]};
-  if (first.is_primitive())
-  {
-    std::span<Value> args{l.begin() + 1, l.end()};
-    return first.as_primitive()(args);
-  }
+  l.execute(env);
   Value ret;
   ret = l;
   return ret;
@@ -189,7 +184,7 @@ Value ASTSymbol::eval(std::unique_ptr<Env>& env)
   auto ret{env->lookup(value_)};
   if (env->error())
   {
-throw std::runtime_error("Could not find symbol " + value_);
+    throw std::runtime_error("Could not find symbol " + value_);
   }
   return ret;
 }
@@ -431,6 +426,51 @@ Value ASTLet::quote(std::unique_ptr<Env>& env)
 }
 
 void ASTLet::add_child(std::unique_ptr<AST> child)
+{
+  if (bindings_ == nullptr)
+  {
+    bindings_ = std::move(child);
+  }
+  else
+  {
+    statements_.push_back(std::move(child));
+  }
+}
+
+ASTLambda::ASTLambda(Token& token) :
+  AST{token}, bindings_{nullptr}
+{
+  type_ = AST::Type::lambda;
+}
+
+Value ASTLambda::eval(std::unique_ptr<Env>& env)
+{
+  Lambda l;
+  for (auto& statement : statements_)
+  {
+    auto tmp = statement->quote(env);
+    l.add_statement(tmp);
+  }
+  l.add_arg(bindings_->quote(env));
+  return Value{l};
+}
+
+Value ASTLambda::quote(std::unique_ptr<Env>& env)
+{
+  List ret;
+  Value tmp{String{"lambda"}};
+  ret.push_back(tmp);
+  tmp = bindings_->quote(env);
+  ret.push_back(tmp);
+  for (auto& statement : statements_)
+  {
+    tmp = statement->quote(env);
+    ret.push_back(tmp);
+  }
+  return Value{ret};
+}
+
+void ASTLambda::add_child(std::unique_ptr<AST> child)
 {
   if (bindings_ == nullptr)
   {
