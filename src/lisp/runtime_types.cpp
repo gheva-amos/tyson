@@ -3,6 +3,12 @@
 #include "lisp/value.h"
 #include <iostream>
 
+Value Object::execute(std::unique_ptr<Env>& env)
+{
+  Nil nil;
+  return nil;
+}
+
 std::ostream& Nil::output(std::ostream& out) const
 {
   out << "Nil";
@@ -13,6 +19,12 @@ std::ostream& Boolean::output(std::ostream& out) const
 {
   out << (value_ ? "True" : "False");
   return out;
+}
+
+Value Boolean::execute(std::unique_ptr<Env>& env)
+{
+  Boolean b{value_};
+  return b;
 }
 
 Boolean& Boolean::operator=(bool value)
@@ -56,6 +68,12 @@ double Number::as_double() const
   return std::get<double>(value_);
 }
 
+Value Number::execute(std::unique_ptr<Env>& env)
+{
+  Number n{as_double()};
+  return n;
+}
+
 std::ostream& String::output(std::ostream& out) const
 {
   out << value_;
@@ -68,10 +86,21 @@ String& String::operator=(const std::string& value)
   return *this;
 }
 
+Value String::execute(std::unique_ptr<Env>& env)
+{
+  String s{value_};
+  return s;
+}
+
 std::ostream& Symbol::output(std::ostream& out) const
 {
-  out << value_;
+  out << value_ << ' ' << name_;
   return out;
+}
+
+Value Symbol::execute(std::unique_ptr<Env>& env)
+{
+  return env->lookup(value_);
 }
 
 std::ostream& List::output(std::ostream& out) const
@@ -118,20 +147,44 @@ size_t List::size() const
   return values_.size();
 }
 
-Value List::execute(std::unique_ptr<Env>& env, bool run_lambda)
+Value List::execute(std::unique_ptr<Env>& env)
 {
-  Value& first{values_[0]};
+  Value first{values_[0].execute(env)};
+  if (first.is_list())
+  {
+    return first.execute(env);
+  }
+  if (first.is_symbol())
+  {
+    return first.execute(env);
+  }
   if (first.is_primitive())
   {
     std::span<Value> args{begin() + 1, end()};
-    return first.as_primitive()(args);
+    std::vector<Value> arguments{};
+    for (auto arg : args)
+    {
+      arguments.push_back(arg.execute(env));
+    }
+    return first.as_primitive()(arguments);
   }
-  if (first.is_list() && first.as_list()[0].is_lambda())
+  if (first.is_lambda())
+  {
+
+    return first.execute(env);
+  }
+  if (first.is_closure())
   {
     std::span<Value> args{begin() + 1, end()};
-    return first.as_list()[0].as_lambda()(args, env);
+    std::vector<Value> arguments{};
+    for (auto arg : args)
+    {
+      arguments.push_back(arg.execute(env));
+    }
+    return first.as_closure()(arguments, env);
   }
-  return Value{Nil{}};
+  Nil nil{};
+  return Value{nil};
 }
 
 void Primitive::set_name(const std::string& name)
@@ -139,7 +192,7 @@ void Primitive::set_name(const std::string& name)
   name_ = name;
 }
 
-void Primitive::set_function(std::function<Value(std::span<const Value>)> func)
+void Primitive::set_function(Function func)
 {
   function_ = func;
 }
@@ -150,9 +203,14 @@ std::ostream& Primitive::output(std::ostream& out) const
   return out;
 }
 
-Value Primitive::operator()(std::span<const Value> args)
+Value Primitive::operator()(std::span<Value> args)
 {
   return function_(args);
+}
+
+Value Primitive::execute(std::unique_ptr<Env>& env)
+{
+  return *this;
 }
 
 std::ostream& Lambda::output(std::ostream& out) const
@@ -166,8 +224,9 @@ void Lambda::add_statement(Value v)
   statements_.push_back(v);
 }
 
-Value Lambda::operator()(std::span<const Value> args, std::unique_ptr<Env>& env)
+Value Lambda::operator()(std::span<Value> args, std::unique_ptr<Env>& env)
 {
+  Value ret{Nil{}};
   if (args.size() != args_.size())
   {
     throw std::runtime_error("wrong number of arguments passed to lambda");
@@ -175,18 +234,26 @@ Value Lambda::operator()(std::span<const Value> args, std::unique_ptr<Env>& env)
   env->push();
   for (size_t i{0}; i < args.size(); ++i)
   {
-    env->define(args_[i].as_string().value(), args[i]);
+    env->define(args_[i].as_symbol().value(), args[i]);
   }
   for (auto s : statements_)
   {
     if (s.is_list())
     {
       List statement = s.as_list();
-      statement.execute(env, true);
+      ret = statement.execute(env);
     }
   }
   env->pop();
-  return String{"jhel"};
+  env->pop();
+  return ret;
+}
+
+Value Lambda::execute(std::unique_ptr<Env>& env)
+{
+  Closure ret{};
+  ret.set_lambda(*this);
+  return ret.execute(env);
 }
 
 void Lambda::add_arg(Value v)
@@ -196,5 +263,44 @@ void Lambda::add_arg(Value v)
     throw std::runtime_error("calling lambda without an argument list");
   }
   args_ = v.as_list();
+}
+
+std::ostream& Closure::output(std::ostream& out) const
+{
+  out << "Closure";
+  return out;
+}
+
+Value Closure::execute(std::unique_ptr<Env>& env)
+{
+  frame_ = env->get_frame();
+  return *this;
+}
+
+Value Closure::operator()(std::span<Value> args, std::unique_ptr<Env>& env)
+{
+  env->add_frame(frame_);
+  return lambda_(args, env);
+}
+
+void Closure::set_lambda(Lambda l)
+{
+  lambda_ = l;
+}
+
+std::ostream& Quote::output(std::ostream& out) const
+{
+  out << "quote";
+  return out;
+}
+
+Value Quote::execute(std::unique_ptr<Env>& env)
+{
+  return value_[0];
+}
+
+void Quote::add_value(Value v)
+{
+  value_.push_back(v);
 }
 
