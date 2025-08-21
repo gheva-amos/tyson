@@ -242,8 +242,8 @@ Value Lambda::operator()(std::span<Value> args, std::unique_ptr<Env>& env)
       ret = statement.execute(env);
     }
   }
-  env->pop();
-  env->pop();
+  env->pop(); // pop last frame from the env
+  env->pop(); // pop the frame we added
   return ret;
 }
 
