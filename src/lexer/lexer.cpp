@@ -35,6 +35,12 @@ void Lexer::skip_non_tokens()
 
 Token Lexer::token()
 {
+  if (!stack_.empty())
+  {
+    Token ret = stack_.back();
+    stack_.pop_back();
+    return ret;
+  }
   skip_non_tokens();
   if (eof())
   {
@@ -80,6 +86,11 @@ Token Lexer::token()
   }
   
   return get_symbol();
+}
+
+void Lexer::push_back(Token token)
+{
+  stack_.push_back(token);
 }
 
 Token Lexer::get_string()
@@ -152,6 +163,11 @@ Token Lexer::get_symbol()
   while (!eof())
   {
     if (is_space())
+    {
+      break;
+    }
+    char c{peek()};
+    if (c == ')')
     {
       break;
     }
