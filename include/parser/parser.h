@@ -14,6 +14,7 @@ public:
   std::unique_ptr<AST> parse();
 private:
   Token token() { return lexer_.token(); }
+  void push_back(Token token) { lexer_.push_back(token); }
   Lexer lexer_;
 
   void parse_form(std::vector<AST*>& stack);
