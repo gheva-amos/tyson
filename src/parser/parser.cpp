@@ -33,41 +33,65 @@ void Parser::parse_form(std::vector<AST*>& stack)
   }
   std::unique_ptr<AST> next{nullptr};
   
-  switch (current.type())
+  if (current.type() == Token::Type::open)
   {
-  case Token::Type::lambda:
-    next = std::make_unique<ASTLambda>(current);
-    break;
-  case Token::Type::let:
-    next = std::make_unique<ASTLet>(current);
-    break;
-  case Token::Type::set:
-    next = std::make_unique<ASTSet>(current);
-    break;
-  case Token::Type::define:
-    next = std::make_unique<ASTDefine>(current);
-    break;
-  case Token::Type::if_t:
-    next = std::make_unique<ASTIf>(current);
-    break;
-  case Token::Type::quote:
-    next = std::make_unique<ASTQuote>(current);
-    break;
-  case Token::Type::open:
-    next = std::make_unique<ASTList>(current);
-    break;
-  case Token::Type::close:
-    stack.pop_back();
-    break;
-  default:
-    stack.back()->add_child(std::move(AST::factory(current)));
-    break;
+    Token next_token = token();
+    switch (next_token.type())
+    {
+    case Token::Type::lambda:
+      next = std::make_unique<ASTLambda>(next_token);
+      break;
+    case Token::Type::let:
+      next = std::make_unique<ASTLet>(next_token);
+      break;
+    case Token::Type::set:
+      next = std::make_unique<ASTSet>(next_token);
+      break;
+    case Token::Type::define:
+      next = std::make_unique<ASTDefine>(next_token);
+      break;
+    case Token::Type::if_t:
+      next = std::make_unique<ASTIf>(next_token);
+      break;
+    case Token::Type::quote:
+      next = std::make_unique<ASTQuote>(next_token);
+      break;
+    case Token::Type::open:
+      {
+        push_back(next_token);
+      }
+      break;
+    case Token::Type::close:
+      {
+        AST* root = stack.back();
+        root->add_child(std::make_unique<ASTNil>(next_token));
+      }
+      break;
+    default:
+      {
+        next = std::make_unique<ASTList>(current); // TODO
+        AST* root = stack.back();
+        stack.push_back(next.get());
+        root->add_child(std::move(next));
+        stack.back()->add_child(std::move(AST::factory(next_token))); // TODO
+        next = nullptr;
+      }
+      break;
+    }
+    if (next != nullptr)
+    {
+      AST* root = stack.back();
+      stack.push_back(next.get());
+      root->add_child(std::move(next));
+    }
   }
-  if (next != nullptr)
+  else if (current.type() == Token::Type::close)
   {
-    AST* root = stack.back();
-    stack.push_back(next.get());
-    root->add_child(std::move(next));
+    stack.pop_back();
+  }
+  else
+  {
+    stack.back()->add_child(std::move(AST::factory(current)));
   }
   parse_form(stack);
 }
