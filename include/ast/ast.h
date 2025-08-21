@@ -60,6 +60,7 @@ public:
   virtual void add_child(std::unique_ptr<AST> child) override;
   virtual AST* get_child() override { return root_.get(); }
   virtual Value eval(std::unique_ptr<Env>& env) override;
+  virtual Value quote(std::unique_ptr<Env>& env) override;
 private:
   std::unique_ptr<AST> root_;
 };

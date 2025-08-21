@@ -50,6 +50,9 @@ std::ostream& AST::output(std::ostream& out) const
   case Type::let:
     out << "Let";
     break;
+  case Type::lambda:
+    out << "Lambda";
+    break;
   case Type::unknown:
     out << "Unknown";
     break;
@@ -65,6 +68,11 @@ void ASTStart::add_child(std::unique_ptr<AST> child)
 Value ASTStart::eval(std::unique_ptr<Env>& env)
 {
   return root_->eval(env);
+}
+
+Value ASTStart::quote(std::unique_ptr<Env>& env)
+{
+  return root_->quote(env);
 }
 
 ASTNumber::ASTNumber(Token& token) :
@@ -156,7 +164,7 @@ Value ASTList::eval(std::unique_ptr<Env>& env)
     Value val{ast->eval(env)};
     l.push_back(val);
   }
-  l.execute(env);
+  //l.execute(env);
   Value ret;
   ret = l;
   return ret;
@@ -198,7 +206,7 @@ std::ostream& ASTSymbol::output(std::ostream& out) const
 Value ASTSymbol::quote(std::unique_ptr<Env>& env)
 {
   AtomTable::Atom id{env->intern(value_)};
-  return Value{Symbol{id}};
+  return Value{Symbol{id, value_}};
 }
 
 ASTNil::ASTNil(Token& token) :
@@ -230,7 +238,9 @@ void ASTQuote::add_child(std::unique_ptr<AST> child)
 
 Value ASTQuote::eval(std::unique_ptr<Env>& env)
 {
-  return value_->quote(env);
+  Quote ret;
+  ret.add_value(value_->quote(env));
+  return ret;
 }
 
 ASTIf::ASTIf(Token& token) :
@@ -311,7 +321,7 @@ void ASTDefine::add_child(std::unique_ptr<AST> child)
 
 Value ASTDefine::eval(std::unique_ptr<Env>& env)
 {
-  Value ret = value_->eval(env);
+  Value ret = value_->eval(env).execute(env);
   env->define(symbol_->as_string(), ret);
   return ret;
 }
@@ -451,8 +461,12 @@ Value ASTLambda::eval(std::unique_ptr<Env>& env)
     auto tmp = statement->quote(env);
     l.add_statement(tmp);
   }
+  if (bindings_ == nullptr)
+  {
+    throw std::runtime_error("No bindings for lambda");
+  }
   l.add_arg(bindings_->quote(env));
-  return Value{l};
+  return Value{l}.execute(env);
 }
 
 Value ASTLambda::quote(std::unique_ptr<Env>& env)
@@ -502,6 +516,8 @@ std::unique_ptr<AST> AST::factory(Token& token)
     return std::make_unique<ASTSet>(token);
   case Token::Type::let:
     return std::make_unique<ASTLet>(token);
+  case Token::Type::lambda:
+    return std::make_unique<ASTLambda>(token);
   case Token::Type::close:
   case Token::Type::dot:
   case Token::Type::END:
@@ -553,6 +569,11 @@ std::unique_ptr<AST> AST::symbol_factory(Token& token)
   if (lc == "let")
   {
     return std::make_unique<ASTLet>(token);
+  }
+
+  if (lc == "lambda")
+  {
+    return std::make_unique<ASTLambda>(token);
   }
 
   return std::make_unique<ASTSymbol>(token);
