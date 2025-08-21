@@ -59,6 +59,7 @@ void Parser::parse_form(std::vector<AST*>& stack)
     case Token::Type::open:
       {
         push_back(next_token);
+        next = std::make_unique<ASTList>(current); // TODO
       }
       break;
     case Token::Type::close:
@@ -73,8 +74,8 @@ void Parser::parse_form(std::vector<AST*>& stack)
         AST* root = stack.back();
         stack.push_back(next.get());
         root->add_child(std::move(next));
-        stack.back()->add_child(std::move(AST::factory(next_token))); // TODO
         next = nullptr;
+        stack.back()->add_child(std::move(AST::factory(next_token))); // TODO
       }
       break;
     }
