@@ -1,4 +1,5 @@
 #include "lisp/value.h"
+#include "lisp/env.h"
 
 Value::Value(Nil nil)
 {
@@ -40,6 +41,16 @@ Value::Value(Lambda lambda)
   value_ = lambda;
 }
 
+Value::Value(Closure closure)
+{
+  value_ = closure;
+}
+
+Value::Value(Quote quote)
+{
+  value_ = quote;
+}
+
 template<class... Ts> struct Overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts> Overloaded(Ts...) -> Overloaded<Ts...>;
 
@@ -55,4 +66,9 @@ std::ostream& operator<<(std::ostream& os, const Value& value)
 bool Value::is_true()
 {
   return std::visit([](auto const& x) -> bool { return x.is_true(); }, value_);
+}
+
+Value Value::execute(std::unique_ptr<Env>& env)
+{
+  return std::visit([&](auto& x) -> Value { return x.execute(env); }, value_);
 }
