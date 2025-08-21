@@ -109,7 +109,6 @@ std::ostream& List::output(std::ostream& out) const
   for (auto& v : values_)
   {
     out << ' ' << v;
-//    v.output(out);
   }
   out << ')';
   return out;
@@ -170,7 +169,6 @@ Value List::execute(std::unique_ptr<Env>& env)
   }
   if (first.is_lambda())
   {
-
     return first.execute(env);
   }
   if (first.is_closure())
