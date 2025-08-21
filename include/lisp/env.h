@@ -16,10 +16,12 @@ public:
   void define(const std::string& name, Value val);
   void set(const std::string& name, Value val);
   void set(AtomTable::Atom id, Value val);
+  void add_frame(std::shared_ptr<Frame> frame);
   void push();
   void pop();
   AtomTable::Atom intern(const std::string& symbol);
   const std::string& get_name(AtomTable::Atom id);
+  std::shared_ptr<Frame> get_frame() { return current_; }
 private:
   AtomTable symbols_{};
   std::shared_ptr<Frame> current_;
