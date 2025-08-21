@@ -32,12 +32,14 @@ int main(int /*argc*/, char** /*argv*/)
       Parser p{line};
       auto parsed{p.parse()};
       auto val(parsed->eval(environment));
+      val = val.execute(environment);
       std::cout << val <<std::endl;
       console.history_add(line);
     }
     catch (const std::runtime_error& err)
     {
       std::cout << err.what() << std::endl;
+      environment = std::make_unique<Env>();
     }
   }
   return 0;
