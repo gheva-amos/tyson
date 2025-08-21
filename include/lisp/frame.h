@@ -17,6 +17,7 @@ public:
   Value lookup(AtomTable::Atom id, bool& ret) const;
   AtomTable& symbols() { return symbols_; }
   std::shared_ptr<Frame> parent();
+  void set_parent(std::shared_ptr<Frame> parent) { parent_ = parent; }
 private:
   AtomTable& symbols_;
   std::shared_ptr<Frame> parent_;

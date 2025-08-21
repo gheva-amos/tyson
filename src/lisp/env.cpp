@@ -45,6 +45,12 @@ void Env::set(AtomTable::Atom id, Value val)
   had_error_ = !current_->set(id, val);
 }
 
+void Env::add_frame(std::shared_ptr<Frame> frame)
+{
+  frame->set_parent(current_);
+  current_ = frame;
+}
+
 void Env::push()
 {
   auto frame = std::make_shared<Frame>(current_->symbols(), current_);
